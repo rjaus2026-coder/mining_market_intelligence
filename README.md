@@ -98,5 +98,3 @@ Named-account monitoring is loaded from [sources/company_watchlist.yaml](/S:/Pro
 - [report/](/S:/Projects/mining_market_intelligence/report): markdown report generation
 - [publish/](/S:/Projects/mining_market_intelligence/publish): HTML rendering and static archive generation
 - [delivery/](/S:/Projects/mining_market_intelligence/delivery): Resend email delivery
-
-Existing [fp360_mi_runner.py](/S:/Projects/mining_market_intelligence/fp360_mi_runner.py) and the Excel template remain unchanged.

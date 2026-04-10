@@ -80,7 +80,6 @@ def _normalize_company_watchlist(data: dict[str, Any]) -> list[dict[str, Any]]:
 
 def load_config(root: Path) -> dict[str, Any]:
     cfg = _load_yaml(root / "config.yaml")
-    cfg = _merge_missing(cfg, _load_yaml(root / "config" / "settings.yaml"))
 
     split_feeds = _normalize_split_feeds(_load_yaml(root / "sources" / "rss_feeds.yaml"))
     if split_feeds:
