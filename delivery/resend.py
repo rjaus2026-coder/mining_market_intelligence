@@ -4,11 +4,13 @@ import json
 import os
 from pathlib import Path
 from typing import Iterable
+from urllib.error import HTTPError
 from urllib import request
 
 from publish import render_markdown_email
 
 RESEND_API_URL = "https://api.resend.com/emails"
+USER_AGENT = "FP360MarketIntel/2.0"
 
 
 def parse_recipients(value: str | None) -> list[str]:
@@ -20,6 +22,15 @@ def parse_recipients(value: str | None) -> list[str]:
 def _subject(kind: str, report_name: str) -> str:
     prefix = "Weekly Insight Brief" if kind == "weekly" else "Daily Mining Market Intelligence"
     return f"{prefix} - {report_name}"
+
+
+def _request_headers(api_key: str) -> dict[str, str]:
+    return {
+        "Authorization": f"Bearer {api_key}",
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "User-Agent": USER_AGENT,
+    }
 
 
 def send_report_email(
@@ -48,14 +59,15 @@ def send_report_email(
     req = request.Request(
         RESEND_API_URL,
         data=json.dumps(payload).encode("utf-8"),
-        headers={
-            "Authorization": f"Bearer {api_key}",
-            "Content-Type": "application/json",
-        },
+        headers=_request_headers(api_key),
         method="POST",
     )
-    with request.urlopen(req, timeout=30) as response:
-        return 200 <= response.status < 300
+    try:
+        with request.urlopen(req, timeout=30) as response:
+            return 200 <= response.status < 300
+    except HTTPError as exc:
+        body = exc.read().decode("utf-8", "ignore")
+        raise RuntimeError(f"Resend send failed with HTTP {exc.code}: {body}") from exc
 
 
 def send_from_env(kind: str, report_path: Path) -> bool:
