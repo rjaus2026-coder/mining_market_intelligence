@@ -1,6 +1,6 @@
 import unittest
 
-from scripts.send_report import _report_is_effectively_empty
+from scripts.send_report import _empty_daily_email_markdown, _report_is_effectively_empty
 
 
 class SendReportTests(unittest.TestCase):
@@ -23,6 +23,12 @@ class SendReportTests(unittest.TestCase):
             ]
         )
         self.assertFalse(_report_is_effectively_empty("daily", content))
+
+    def test_builds_empty_daily_email_summary(self) -> None:
+        content = _empty_daily_email_markdown("2026-04-10")
+        self.assertIn("# Daily Mining Market Intelligence - 2026-04-10", content)
+        self.assertIn("No actionable U.S.-relevant signals cleared the daily thresholds today.", content)
+        self.assertIn("No outreach action is recommended from today's run.", content)
 
 
 if __name__ == "__main__":

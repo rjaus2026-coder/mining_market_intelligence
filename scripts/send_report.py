@@ -8,7 +8,7 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from delivery.resend import send_from_env
+from delivery.resend import send_from_env, send_markdown_from_env
 from config_loader import load_config
 
 
@@ -36,6 +36,27 @@ def _report_is_effectively_empty(kind: str, content: str) -> bool:
     )
 
 
+def _empty_daily_email_markdown(report_date: str) -> str:
+    return "\n".join(
+        [
+            f"# Daily Mining Market Intelligence - {report_date}",
+            "",
+            "**Summary:** No actionable U.S.-relevant signals cleared the daily thresholds today.",
+            "",
+            "## What this means",
+            "",
+            "- No new daily signals reached the report's account-work threshold.",
+            "- No SEC filing items surfaced today.",
+            "- No company briefs cleared the account-work threshold today.",
+            "",
+            "## Recommended action",
+            "",
+            "- No outreach action is recommended from today's run.",
+            "- Monitor the next daily report for follow-on signals or a change in posture.",
+        ]
+    )
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--kind", choices=["daily", "weekly"], required=True)
@@ -48,6 +69,16 @@ def main() -> None:
 
     content = report_path.read_text(encoding="utf-8")
     if _report_is_effectively_empty(args.kind, content):
+        if args.kind == "daily":
+            sent = send_markdown_from_env(
+                kind="daily",
+                report_name=args.date,
+                title=args.date,
+                markdown=_empty_daily_email_markdown(args.date),
+                archive_path=f"daily/{report_path.stem}.html",
+            )
+            print(f"Email {'sent' if sent else 'skipped'}: empty daily summary for {report_path}")
+            return
         print(f"Email skipped: report is empty: {report_path}")
         return
 

@@ -33,10 +33,11 @@ def _request_headers(api_key: str) -> dict[str, str]:
     }
 
 
-def send_report_email(
+def send_markdown_email(
     *,
-    kind: str,
-    report_path: Path,
+    subject: str,
+    title: str,
+    markdown: str,
     recipients: Iterable[str],
     from_email: str,
     api_key: str,
@@ -46,13 +47,10 @@ def send_report_email(
     if not recipients:
         return False
 
-    markdown = report_path.read_text(encoding="utf-8")
-    report_name = report_path.stem.replace("insight_brief_", "")
-    title = report_name if kind == "weekly" else report_path.stem
     payload = {
         "from": from_email,
         "to": recipients,
-        "subject": _subject(kind, report_name),
+        "subject": subject,
         "html": render_markdown_email(title=title, markdown=markdown, archive_url=archive_url),
         "text": markdown,
     }
@@ -68,6 +66,29 @@ def send_report_email(
     except HTTPError as exc:
         body = exc.read().decode("utf-8", "ignore")
         raise RuntimeError(f"Resend send failed with HTTP {exc.code}: {body}") from exc
+
+
+def send_report_email(
+    *,
+    kind: str,
+    report_path: Path,
+    recipients: Iterable[str],
+    from_email: str,
+    api_key: str,
+    archive_url: str = "",
+) -> bool:
+    markdown = report_path.read_text(encoding="utf-8")
+    report_name = report_path.stem.replace("insight_brief_", "")
+    title = report_name if kind == "weekly" else report_path.stem
+    return send_markdown_email(
+        subject=_subject(kind, report_name),
+        title=title,
+        markdown=markdown,
+        recipients=recipients,
+        from_email=from_email,
+        api_key=api_key,
+        archive_url=archive_url,
+    )
 
 
 def send_from_env(kind: str, report_path: Path) -> bool:
@@ -88,6 +109,38 @@ def send_from_env(kind: str, report_path: Path) -> bool:
     return send_report_email(
         kind=kind,
         report_path=report_path,
+        recipients=recipients,
+        from_email=from_email,
+        api_key=api_key,
+        archive_url=report_url,
+    )
+
+
+def send_markdown_from_env(
+    *,
+    kind: str,
+    report_name: str,
+    title: str,
+    markdown: str,
+    archive_path: str = "",
+) -> bool:
+    api_key = os.getenv("RESEND_API_KEY", "").strip()
+    from_email = os.getenv("RESEND_FROM_EMAIL", "").strip()
+    archive_url = os.getenv("SITE_BASE_URL", "").rstrip("/")
+    recipients = parse_recipients(
+        os.getenv("WEEKLY_REPORT_RECIPIENTS" if kind == "weekly" else "DAILY_REPORT_RECIPIENTS")
+    )
+    if not api_key or not from_email or not recipients:
+        return False
+
+    report_url = ""
+    if archive_url and archive_path:
+        report_url = f"{archive_url.rstrip('/')}/{archive_path.lstrip('/')}"
+
+    return send_markdown_email(
+        subject=_subject(kind, report_name),
+        title=title,
+        markdown=markdown,
         recipients=recipients,
         from_email=from_email,
         api_key=api_key,
