@@ -1,0 +1,14 @@
+report:
+  min_tls: 35
+  max_targets_per_tier: 10
+
+scoring:
+  tier1_min: 80
+  tier2_min: 55
+  tier3_min: 35
+
+runtime:
+  use_local_llm: false
+  model_name: ""
+  lookback_days_short: 7
+  lookback_days_long: 30
