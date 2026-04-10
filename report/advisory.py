@@ -285,7 +285,7 @@ def _score_rationale(signal: dict) -> str:
     parts = [
         ("impact", int(signal.get("impact") or 0), "meaningful operational impact"),
         ("time_to_strain", int(signal.get("time_to_strain") or 0), "a relatively near-term pain window"),
-        ("fit", int(signal.get("fit") or 0), "clear fit with FP360's operating lane"),
+        ("fit", int(signal.get("fit") or 0), "clear fit with Steelpoint Operations' operating lane"),
         ("access", int(signal.get("access") or 0), "a plausible path to stakeholder access"),
     ]
     strongest = [phrase for _, _, phrase in sorted(parts, key=lambda item: item[1], reverse=True)[:2]]

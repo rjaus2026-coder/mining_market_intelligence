@@ -9,7 +9,7 @@ from store import get_connection, get_signals_in_date_range
 from classify.us_relevance import filter_signals_by_us_gate
 from report.advisory import build_account_briefs, build_sec_company_briefs, enrich_signal, is_sec_signal, summarize_commercial_angle
 
-# Category -> operational implication and typical follow-on failure (FP360 lens)
+# Category -> operational implication and typical follow-on failure (Steelpoint Operations lens)
 _CATEGORY_IMPLICATION = {
     "Growth": (
         "Expansion and ramp-up increase demand on sourcing, procurement, and planning.",
@@ -92,7 +92,7 @@ def build_weekly_brief(
     top_signals = sorted(core_signals, key=lambda x: x["total_score"], reverse=True)[:15]
 
     lines = [
-        f"# FP360 Insight Brief (Weekly)",
+        f"# Steelpoint Operations Insight Brief (Weekly)",
         "",
         f"**Period:** {start_str} – {end_str}",
         f"**Signals in period (US Relevance Gate applied):** {len(signals)}",
@@ -214,7 +214,7 @@ def build_weekly_brief(
         lines.append(f"  - Who feels it first: {s['who_feels_it_first']}")
         lines.append(f"  - Recommended move: {s['recommended_move']}")
         lines.append(f"  - Recommended posture: {s.get('posture', 'TBD')}")
-        lines.append(f"  - Suggested FP360 first move: {s['suggested_first_move']}")
+        lines.append(f"  - Suggested Steelpoint Operations first move: {s['suggested_first_move']}")
         lines.append("")
     if not watchlist:
         lines.append("- None this period; review synthesized insights for manual watchlist.")
@@ -227,8 +227,8 @@ def build_weekly_brief(
     lines.append("")
     lines.append("## Glossary")
     lines.append("")
-    lines.append("**FP360 Opportunity Score (0–100)**")
-    lines.append("- **Meaning:** A heuristic indicator of likely near- to mid-term business operations and supply chain strain where FP360 services apply. Directional, not predictive.")
+    lines.append("**Steelpoint Operations Opportunity Score (0-100)**")
+    lines.append("- **Meaning:** A heuristic indicator of likely near- to mid-term business operations and supply chain strain where Steelpoint Operations services apply. Directional, not predictive.")
     lines.append("- **Score brackets:** 0–24 Monitor | 25–39 Monitor / Prepare POV | 40–54 Prepare POV | 55–69 Target accounts | 70–84 Proactive outreach | 85–100 Immediate outreach / priority.")
     lines.append("- **Scoring rules (governance):** Scores must decay if no follow-on signals appear. No single uncorroborated item jumps from <30 to >70. Repeated signals compound. New entrants bias Time-to-strain upward. Technical/geological items cap Operational impact at 10 unless downstream ops/SCM explicit. Keep scores conservative when evidence is incomplete; mark unknowns TBD.")
     lines.append("")

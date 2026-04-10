@@ -1,4 +1,4 @@
-# FP360 Insight Brief (Weekly)
+# Steelpoint Operations Insight Brief (Weekly)
 
 **Period:** 2026-04-03 – 2026-04-09
 **Signals in period (US Relevance Gate applied):** 24
@@ -171,7 +171,7 @@ Procurement backlogs, capacity planning gaps, and supplier lead-time strain as e
   - Who feels it first: COO or VP Operations
   - Recommended move: Prepare outreach
   - Recommended posture: Target accounts
-  - Suggested FP360 first move: Offer a startup and execution-readiness diagnostic.
+  - Suggested Steelpoint Operations first move: Offer a startup and execution-readiness diagnostic.
 
 - **Company:** Highland Copper
   - US relevance (Mining.com): Source page: US-focused page | Basis: US asset
@@ -179,7 +179,7 @@ Procurement backlogs, capacity planning gaps, and supplier lead-time strain as e
   - Who feels it first: VP Supply Chain or Supply Chain Director
   - Recommended move: Prepare outreach
   - Recommended posture: Target accounts
-  - Suggested FP360 first move: Offer a material-flow and supplier-coordination diagnostic.
+  - Suggested Steelpoint Operations first move: Offer a material-flow and supplier-coordination diagnostic.
 
 - **Company:** EnergyX
   - US relevance (Mining.com): Source page: US-focused page | Basis: US asset
@@ -187,7 +187,7 @@ Procurement backlogs, capacity planning gaps, and supplier lead-time strain as e
   - Who feels it first: VP Supply Chain or Supply Chain Director
   - Recommended move: Warm research
   - Recommended posture: Prepare POV
-  - Suggested FP360 first move: Offer a material-flow and supplier-coordination diagnostic.
+  - Suggested Steelpoint Operations first move: Offer a material-flow and supplier-coordination diagnostic.
 
 - **Company:** USA Rare Earth
   - US relevance (Mining.com): Source page: US-focused page | Basis: US asset
@@ -195,7 +195,7 @@ Procurement backlogs, capacity planning gaps, and supplier lead-time strain as e
   - Who feels it first: VP Supply Chain or Supply Chain Director
   - Recommended move: Warm research
   - Recommended posture: Prepare POV
-  - Suggested FP360 first move: Offer a material-flow and supplier-coordination diagnostic.
+  - Suggested Steelpoint Operations first move: Offer a material-flow and supplier-coordination diagnostic.
 
 - **Company:** United States Antimony
   - US relevance (Mining.com): Source page: US-focused page | Basis: US asset
@@ -203,7 +203,7 @@ Procurement backlogs, capacity planning gaps, and supplier lead-time strain as e
   - Who feels it first: VP Supply Chain or Supply Chain Director
   - Recommended move: Warm research
   - Recommended posture: Prepare POV
-  - Suggested FP360 first move: Offer a material-flow and supplier-coordination diagnostic.
+  - Suggested Steelpoint Operations first move: Offer a material-flow and supplier-coordination diagnostic.
 
 - **Company:** ION Minerals
   - US relevance (Mining.com): Source page: US-focused page | Basis: US asset
@@ -211,7 +211,7 @@ Procurement backlogs, capacity planning gaps, and supplier lead-time strain as e
   - Who feels it first: VP Supply Chain or Supply Chain Director
   - Recommended move: Warm research
   - Recommended posture: Prepare POV
-  - Suggested FP360 first move: Offer a material-flow and supplier-coordination diagnostic.
+  - Suggested Steelpoint Operations first move: Offer a material-flow and supplier-coordination diagnostic.
 
 - **Company:** ioneer
   - US relevance (Mining.com): Source page: US-focused page | Basis: US asset
@@ -219,7 +219,7 @@ Procurement backlogs, capacity planning gaps, and supplier lead-time strain as e
   - Who feels it first: VP Supply Chain or Supply Chain Director
   - Recommended move: Track target account
   - Recommended posture: Monitor
-  - Suggested FP360 first move: Offer a material-flow and supplier-coordination diagnostic.
+  - Suggested Steelpoint Operations first move: Offer a material-flow and supplier-coordination diagnostic.
 
 ---
 
@@ -229,7 +229,7 @@ Procurement backlogs, capacity planning gaps, and supplier lead-time strain as e
 
 ## Glossary
 
-**FP360 Opportunity Score (0–100)**
-- **Meaning:** A heuristic indicator of likely near- to mid-term business operations and supply chain strain where FP360 services apply. Directional, not predictive.
+**Steelpoint Operations Opportunity Score (0-100)**
+- **Meaning:** A heuristic indicator of likely near- to mid-term business operations and supply chain strain where Steelpoint Operations services apply. Directional, not predictive.
 - **Score brackets:** 0–24 Monitor | 25–39 Monitor / Prepare POV | 40–54 Prepare POV | 55–69 Target accounts | 70–84 Proactive outreach | 85–100 Immediate outreach / priority.
 - **Scoring rules (governance):** Scores must decay if no follow-on signals appear. No single uncorroborated item jumps from <30 to >70. Repeated signals compound. New entrants bias Time-to-strain upward. Technical/geological items cap Operational impact at 10 unless downstream ops/SCM explicit. Keep scores conservative when evidence is incomplete; mark unknowns TBD.

@@ -1,4 +1,4 @@
-# Report templates and example snippets
+﻿# Report templates and example snippets
 
 Templates are implemented in `report/markdown.py` (daily) and `report/weekly.py` (weekly). Below: template structure and placeholder-only examples.
 
@@ -33,7 +33,7 @@ Templates are implemented in `report/markdown.py` (daily) and `report/weekly.py`
   - Function: [Ops | SCM | Procurement | Planning | Logistics | TBD]
   - Trigger moment: [1 short sentence describing what causes urgency, or TBD]
 
-  **FP360 first move:**
+  **Steelpoint Operations first move:**
   - Entry angle: [1 short phrase, or TBD]
   - Language to use: [short phrase, or TBD]
   - Language to avoid: [short phrase, or TBD]
@@ -64,7 +64,7 @@ Templates are implemented in `report/markdown.py` (daily) and `report/weekly.py`
 ## B) Weekly template (structure)
 
 ```markdown
-# FP360 Insight Brief (Weekly)
+# Steelpoint Operations Insight Brief (Weekly)
 
 **Period:** {start_str} – {end_str}
 **Signals in period:** {count}
@@ -96,7 +96,7 @@ Templates are implemented in `report/markdown.py` (daily) and `report/weekly.py`
   - Why now: [1 sentence]
   - Who feels it first: [role/function]
   - Recommended posture: [Monitor | Prepare POV | Target accounts | Proactive outreach]
-  - Suggested FP360 first move: [1 short phrase]
+  - Suggested Steelpoint Operations first move: [1 short phrase]
 
 ---
 
@@ -120,7 +120,7 @@ Templates are implemented in `report/markdown.py` (daily) and `report/weekly.py`
   - Function: TBD
   - Trigger moment: TBD
 
-  **FP360 first move:**
+  **Steelpoint Operations first move:**
   - Entry angle: TBD
   - Language to use: TBD
   - Language to avoid: TBD
@@ -136,5 +136,6 @@ Templates are implemented in `report/markdown.py` (daily) and `report/weekly.py`
   - Why now: TBD
   - Who feels it first: TBD
   - Recommended posture: Prepare POV
-  - Suggested FP360 first move: TBD
+  - Suggested Steelpoint Operations first move: TBD
 ```
+

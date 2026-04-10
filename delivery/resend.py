@@ -10,7 +10,7 @@ from urllib import request
 from publish import render_markdown_email
 
 RESEND_API_URL = "https://api.resend.com/emails"
-USER_AGENT = "FP360MarketIntel/2.0"
+USER_AGENT = "SteelpointOperationsIntel/2.0"
 
 
 def parse_recipients(value: str | None) -> list[str]:

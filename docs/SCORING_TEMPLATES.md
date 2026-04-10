@@ -1,4 +1,4 @@
-# FP360 Opportunity Score – Report template reference
+﻿# Steelpoint Operations Opportunity Score – Report template reference
 
 Templates are implemented in `report/markdown.py` (daily) and `report/weekly.py` (weekly). Below: full template markdown for both.
 
@@ -17,15 +17,15 @@ Templates are implemented in `report/markdown.py` (daily) and `report/weekly.py`
 - **Posture:** Recommended BD stance: Monitor → Prepare POV → Target accounts → Proactive outreach (higher score = more urgency).
 - **Score:** Heuristic 0–100 from impact, time-to-strain, fit, and access.
 
-## FP360 Opportunity Score (0–100)
+## Steelpoint Operations Opportunity Score (0–100)
 
 **What it represents**
-A heuristic measure of how likely a company-level change will create near- to mid-term business operations or supply chain pain where FP360 services are relevant. Directional, not predictive.
+A heuristic measure of how likely a company-level change will create near- to mid-term business operations or supply chain pain where Steelpoint Operations services are relevant. Directional, not predictive.
 
 **Scoring dimensions**
 - Operational impact (0–30): effect on sourcing, procurement, inventory, planning, material flow
 - Time-to-strain (0–30): how quickly operational/SCM pressure is likely to surface
-- FP360 service fit (0–25): alignment with FP360 business ops + SCM offerings
+- Steelpoint Operations service fit (0–25): alignment with Steelpoint Operations business ops + SCM offerings
 - Engagement feasibility (0–15): practical likelihood to engage (visibility, buyer, timing)
 
 **Score brackets and posture**
@@ -61,7 +61,7 @@ A heuristic measure of how likely a company-level change will create near- to mi
   - Function: TBD
   - Trigger moment: TBD
 
-  **FP360 first move:**
+  **Steelpoint Operations first move:**
   - Entry angle: TBD
   - Language to use: TBD
   - Language to avoid: TBD
@@ -92,15 +92,15 @@ A heuristic measure of how likely a company-level change will create near- to mi
 ## 2) Weekly report template (full)
 
 ```markdown
-# FP360 Insight Brief (Weekly)
+# Steelpoint Operations Insight Brief (Weekly)
 
 **Period:** {start_str} – {end_str}
 **Signals in period:** {count}
 
-## FP360 Opportunity Score (0–100)
+## Steelpoint Operations Opportunity Score (0–100)
 
 **Meaning**
-A heuristic indicator of likely near- to mid-term business operations and supply chain strain where FP360 services apply. Directional, not predictive.
+A heuristic indicator of likely near- to mid-term business operations and supply chain strain where Steelpoint Operations services apply. Directional, not predictive.
 
 **Score brackets**
 - 0–24 Monitor
@@ -146,9 +146,10 @@ A heuristic indicator of likely near- to mid-term business operations and supply
   - Why now: TBD
   - Who feels it first: TBD
   - Recommended posture: {posture}
-  - Suggested FP360 first move: TBD
+  - Suggested Steelpoint Operations first move: TBD
 
 ---
 
 *Factual, plain-spoken. Treat as signal inputs, not conclusions. Where evidence is incomplete, watch for follow-on announcements.*
 ```
+

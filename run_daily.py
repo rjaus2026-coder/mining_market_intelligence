@@ -47,7 +47,7 @@ def main() -> None:
         print("No rss_feeds configured")
         conn.close()
         return
-    user_agent = cfg.get("user_agent", "FP360MarketIntel/2.0")
+    user_agent = cfg.get("user_agent", "SteelpointOperationsIntel/2.0")
 
     items = fetch_all_feeds(feeds, user_agent)
     items.extend(fetch_watchlist_press_releases(company_watchlist, user_agent))

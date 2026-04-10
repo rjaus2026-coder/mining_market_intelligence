@@ -48,7 +48,7 @@ def build_report(
     sell_ahead = [s for s in core_signals if s.get("recommended_move") in sell_ahead_moves]
 
     lines = [
-        f"# Mining Market Intelligence â€“ {report_date}",
+        f"# Mining Market Intelligence - {report_date}",
         "",
         "*Scope: US-based companies only*",
         "",
@@ -62,7 +62,7 @@ def build_report(
         country_suffix = ""
         if s.get("company"):
             cc = s.get("company_country") or "TBD"
-            country_suffix = f" â€” Country: {cc}"
+            country_suffix = f" - Country: {cc}"
         lines.append(f"- **{s['signal_summary'][:200]}**{company}{country_suffix}")
         lines.append(
             f"  - {s['segment']} | {s['category']} | {s['posture']} | Score: {s['total_score']} | [Link]({s['link']})"
@@ -96,11 +96,11 @@ def build_report(
         lines.append(f"  - Function: {s['buyer_function']}")
         lines.append(f"  - Trigger moment: {s['trigger_moment']}")
         lines.append("")
-        lines.append("  **FP360 first move:**")
+        lines.append("  **Steelpoint Operations first move:**")
         lines.append(f"  - Entry angle: {s['entry_angle']}")
         lines.append(f"  - Language to use: {s['language_to_use']}")
         lines.append(f"  - Language to avoid: {s['language_to_avoid']}")
-        lines.append(f"  - Initial scope (2â€“4 weeks): {s['initial_scope']}")
+        lines.append(f"  - Initial scope (2-4 weeks): {s['initial_scope']}")
     lines.append("")
     lines.append("---")
     lines.append("")
@@ -121,7 +121,7 @@ def build_report(
     lines.append("")
     lines.append("---")
     lines.append("")
-    lines.append("## Sell-ahead shortlist (Next 90â€“180 days)")
+    lines.append("## Sell-ahead shortlist (Next 90-180 days)")
     lines.append("")
     if sell_ahead:
         for s in sell_ahead[:20]:
@@ -129,9 +129,9 @@ def build_report(
             country_suffix = ""
             if s.get("company"):
                 cc = s.get("company_country") or "TBD"
-                country_suffix = f" â€” Country: {cc}"
+                country_suffix = f" - Country: {cc}"
             lines.append(
-                f"- **{s['signal_summary'][:200]}**{company}{country_suffix} â€” {s['recommended_move']} | {s['posture']} | Score: {s['total_score']} | [Link]({s['link']})"
+                f"- **{s['signal_summary'][:200]}**{company}{country_suffix} - {s['recommended_move']} | {s['posture']} | Score: {s['total_score']} | [Link]({s['link']})"
             )
     else:
         lines.append("None above threshold today; review top signals manually.")
@@ -143,7 +143,7 @@ def build_report(
     if account_briefs:
         for brief in account_briefs:
             lines.append(
-                f"- **{brief['company']}** â€” {brief['recommended_move']} | {brief['posture']} | Score: {brief['score']} | Signals: {brief['signal_count']}"
+                f"- **{brief['company']}** - {brief['recommended_move']} | {brief['posture']} | Score: {brief['score']} | Signals: {brief['signal_count']}"
             )
             lines.append(f"  - Why now: {brief['why_now']}")
             lines.append(f"  - Likely buyer: {brief['likely_role']} ({brief['buyer_function']})")
@@ -183,7 +183,7 @@ def build_report(
         else:
             rel_line = f"US relevance: Basis: {basis}"
         lines.append(
-            f"- **{name}** â€“ Country: {cc} â€“ {c['recommended_move']} | {c['posture']} (score {c['total_score']}) | {rel_line} â€“ {c['signal_summary'][:100]}... [Link]({c['link']})"
+            f"- **{name}** - Country: {cc} - {c['recommended_move']} | {c['posture']} (score {c['total_score']}) | {rel_line} - {c['signal_summary'][:100]}... [Link]({c['link']})"
         )
     if not seen:
         lines.append("- No companies extracted above threshold; review top signals for manual targeting.")
@@ -192,27 +192,21 @@ def build_report(
     lines.append("")
     lines.append("## Glossary")
     lines.append("")
-    lines.append(
-        "**How to read** â€” Each signal line shows: **Segment** | **Category** | **Posture** | **Score** | Link."
-    )
-    lines.append(
-        "- **Segment:** Type of player (Operator, EPCM, Contractor, OEM, Supplier, Startup/Platform)."
-    )
+    lines.append("**How to read** - Each signal line shows: **Segment** | **Category** | **Posture** | **Score** | Link.")
+    lines.append("- **Segment:** Type of player (Operator, EPCM, Contractor, OEM, Supplier, Startup/Platform).")
     lines.append("- **Category:** Type of development (Growth, Entry, Change, Risk, Transition).")
-    lines.append(
-        "- **Posture:** Recommended BD stance: Monitor â†’ Prepare POV â†’ Target accounts â†’ Proactive outreach (higher score = more urgency)."
-    )
-    lines.append("- **Score:** Heuristic 0â€“100 from impact, time-to-strain, fit, and access.")
+    lines.append("- **Posture:** Recommended BD stance: Monitor -> Prepare POV -> Target accounts -> Proactive outreach (higher score = more urgency).")
+    lines.append("- **Score:** Heuristic 0-100 from impact, time-to-strain, fit, and access.")
     lines.append("")
-    lines.append("**FP360 Opportunity Score (0â€“100)**")
+    lines.append("**Steelpoint Operations Opportunity Score (0-100)**")
     lines.append(
-        "- **What it represents:** A heuristic measure of how likely a company-level change will create near- to mid-term business operations or supply chain pain where FP360 services are relevant. Directional, not predictive."
+        "- **What it represents:** A heuristic measure of how likely a company-level change will create near- to mid-term business operations or supply chain pain where Steelpoint Operations services are relevant. Directional, not predictive."
     )
     lines.append(
-        "- **Scoring dimensions:** Operational impact (0â€“30); Time-to-strain (0â€“30); FP360 service fit (0â€“25); Engagement feasibility (0â€“15)."
+        "- **Scoring dimensions:** Operational impact (0-30); Time-to-strain (0-30); Steelpoint Operations service fit (0-25); Engagement feasibility (0-15)."
     )
     lines.append(
-        "- **Score brackets:** 0â€“24 Monitor | 25â€“39 Monitor / Prepare POV | 40â€“54 Prepare POV | 55â€“69 Target accounts | 70â€“84 Proactive outreach | 85â€“100 Immediate outreach / priority."
+        "- **Score brackets:** 0-24 Monitor | 25-39 Monitor / Prepare POV | 40-54 Prepare POV | 55-69 Target accounts | 70-84 Proactive outreach | 85-100 Immediate outreach / priority."
     )
     lines.append(
         "- **Scoring rules (governance):** Scores must decay if no follow-on signals appear. No single uncorroborated item jumps from <30 to >70. Repeated signals compound. New entrants bias Time-to-strain upward. Technical/geological items cap Operational impact at 10 unless downstream ops/SCM explicit. Keep scores conservative when evidence is incomplete; mark unknowns TBD."

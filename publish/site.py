@@ -14,7 +14,7 @@ def _write_html(target: Path, title: str, markdown: str, subtitle: str = "") -> 
 
 def _report_title(path: Path) -> str:
     if path.parent.name == "weekly":
-        return f"FP360 Weekly Insight Brief - {path.stem.replace('insight_brief_', '')}"
+        return f"Steelpoint Operations Weekly Insight Brief - {path.stem.replace('insight_brief_', '')}"
     return f"Mining Market Intelligence - {path.stem}"
 
 
@@ -36,7 +36,7 @@ def _index_html(daily_pages: list[Path], weekly_pages: list[Path]) -> str:
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>FP360 Mining Market Intelligence</title>
+  <title>Steelpoint Operations Mining Market Intelligence</title>
   <style>
     body {{
       margin: 0;
@@ -70,7 +70,7 @@ def _index_html(daily_pages: list[Path], weekly_pages: list[Path]) -> str:
 <body>
   <main>
     <div class="hero">
-      <h1>FP360 Mining Market Intelligence</h1>
+      <h1>Steelpoint Operations Mining Market Intelligence</h1>
       <p>Static archive for the daily and weekly mining market intelligence reports.</p>
       <p>Generated: {generated}</p>
     </div>
