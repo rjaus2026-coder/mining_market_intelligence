@@ -5,9 +5,17 @@ from collections import defaultdict
 from datetime import date, timedelta
 from typing import List, Optional, Tuple
 
-from store import get_connection, get_signals_in_date_range
 from classify.us_relevance import filter_signals_by_us_gate
 from report.advisory import build_account_briefs, build_sec_company_briefs, enrich_signal, is_sec_signal, summarize_commercial_angle
+from report.strategic import (
+    build_disconfirming_evidence,
+    build_constraint_heatmap,
+    build_theme_momentum,
+    durability_label,
+    top_active_accounts,
+    top_monitor_accounts,
+)
+from store import get_connection, get_signals_in_date_range
 
 # Category -> operational implication and typical follow-on failure (Steelpoint Operations lens)
 _CATEGORY_IMPLICATION = {
@@ -17,7 +25,7 @@ _CATEGORY_IMPLICATION = {
     ),
     "Entry": (
         "New players often lack established operating models and supplier relationships.",
-        "Supplier onboarding delays, unfamiliar contracting norms, and execution risk in first 12–18 months.",
+        "Supplier onboarding delays, unfamiliar contracting norms, and execution risk in first 12-18 months.",
     ),
     "Change": (
         "Restructuring, ERP, or operating-model shifts stress existing processes and people.",
@@ -43,6 +51,13 @@ def _week_range(end_date: date, days: int = 7) -> tuple[str, str]:
     return start.isoformat(), end_date.isoformat()
 
 
+def _previous_week_range(start_date: str, days: int = 7) -> tuple[str, str]:
+    start = date.fromisoformat(start_date)
+    end = start - timedelta(days=1)
+    begin = end - timedelta(days=days - 1)
+    return begin.isoformat(), end.isoformat()
+
+
 def _synthesize_insight(
     category: str,
     signals: List[dict],
@@ -51,9 +66,7 @@ def _synthesize_insight(
     what_changed = "; ".join(s["signal_summary"][:120] for s in signals[:max_examples])
     if len(signals) > max_examples:
         what_changed += f" ({len(signals) - max_examples} additional signals)"
-    why_matters, fails_next = _CATEGORY_IMPLICATION.get(
-        category, _DEFAULT_IMPLICATION
-    )
+    why_matters, fails_next = _CATEGORY_IMPLICATION.get(category, _DEFAULT_IMPLICATION)
     return what_changed, why_matters, fails_next
 
 
@@ -68,21 +81,46 @@ def build_weekly_brief(
 ) -> str:
     conn = get_connection(db_path)
     start_str, end_str = _week_range(end_date, days)
+    prior_start, prior_end = _previous_week_range(start_str, days)
     raw_signals = get_signals_in_date_range(conn, start_str, end_str, min_score)
+    raw_prior = get_signals_in_date_range(conn, prior_start, prior_end, min_score)
     conn.close()
-    signals = sorted([
-        enrich_signal(signal)
-        for signal in filter_signals_by_us_gate(raw_signals, secondary_whitelist=secondary_whitelist)
-    ], key=lambda item: (item.get("total_score", 0), item.get("time_to_strain", 0)), reverse=True)
+
+    signals = sorted(
+        [
+            enrich_signal(signal)
+            for signal in filter_signals_by_us_gate(raw_signals, secondary_whitelist=secondary_whitelist)
+        ],
+        key=lambda item: (item.get("total_score", 0), item.get("time_to_strain", 0)),
+        reverse=True,
+    )
+    prior_signals = sorted(
+        [
+            enrich_signal(signal)
+            for signal in filter_signals_by_us_gate(raw_prior, secondary_whitelist=secondary_whitelist)
+        ],
+        key=lambda item: (item.get("total_score", 0), item.get("time_to_strain", 0)),
+        reverse=True,
+    )
+
     core_signals = [signal for signal in signals if not is_sec_signal(signal)]
     sec_briefs = build_sec_company_briefs(signals, limit=8)
-    account_briefs = build_account_briefs(signals, limit=8, min_move_rank=1)
+    all_account_briefs = build_account_briefs(signals, limit=10, min_move_rank=0)
+    active_accounts = top_active_accounts(all_account_briefs, limit=5)
+    monitor_accounts = top_monitor_accounts(all_account_briefs, limit=5)
+    theme_momentum = build_theme_momentum(signals, prior_signals, limit=5)
+    constraint_heatmap = build_constraint_heatmap(signals, limit=5)
+    disconfirming_evidence = build_disconfirming_evidence(
+        theme_momentum,
+        constraint_heatmap,
+        active_accounts,
+        monitor_accounts,
+    )
 
     by_category = defaultdict(list)
     for s in core_signals:
         by_category[s["category"]].append(s)
 
-    # Prefer categories with most signals; cap at max_insights
     ordered = sorted(
         by_category.items(),
         key=lambda x: (len(x[1]), sum(s["total_score"] for s in x[1])),
@@ -92,19 +130,113 @@ def build_weekly_brief(
     top_signals = sorted(core_signals, key=lambda x: x["total_score"], reverse=True)[:15]
 
     lines = [
-        f"# Steelpoint Operations Insight Brief (Weekly)",
+        "# Steelpoint Operations Insight Brief (Weekly)",
         "",
-        f"**Period:** {start_str} – {end_str}",
+        f"**Period:** {start_str} - {end_str}",
         f"**Signals in period (US Relevance Gate applied):** {len(signals)}",
         "",
-        "## Top signals by score",
+        "## Executive thesis",
         "",
     ]
+
+    if theme_momentum:
+        top_theme = theme_momentum[0]
+        lines.append(
+            f"- Market thesis: The strongest concentration this week is {top_theme['category']} activity, which is shaping near-term execution demand."
+        )
+        lines.append(
+            f"- Momentum: {top_theme['category']} is {top_theme['status'].lower()} versus the prior week ({top_theme['current_count']} vs {top_theme['prior_count']} signals)."
+        )
+    else:
+        lines.append("- Market thesis: Signal volume is too thin this week to support a strong structural call.")
+
+    if constraint_heatmap:
+        hottest = constraint_heatmap[0]
+        lines.append(
+            f"- Bottleneck focus: {hottest['function']} is the leading pressure point ({hottest['count']} signals, avg score {hottest['avg_score']})."
+        )
+    else:
+        lines.append("- Bottleneck focus: No recurring execution bottleneck clearly dominates this week.")
+
+    if active_accounts:
+        lines.append(
+            "- Commercial implication: Push on "
+            + ", ".join(brief["company"] for brief in active_accounts[:3])
+            + " before workarounds or incumbent suppliers harden."
+        )
+    elif monitor_accounts:
+        lines.append(
+            f"- Commercial implication: No accounts cleared active-work status, but {len(monitor_accounts)} names deserve watchlist time."
+        )
+    else:
+        lines.append("- Commercial implication: No accounts currently justify a push or even a watchlist stance.")
+
+    lines.extend(
+        [
+            "",
+            "---",
+            "",
+            "## Theme momentum",
+            "",
+        ]
+    )
+    if theme_momentum:
+        for item in theme_momentum:
+            company_suffix = f" | Companies: {', '.join(item['companies'])}" if item["companies"] else ""
+            lines.append(
+                f"- **{item['category']}** - {item['status']} | This week: {item['current_count']} | Prior week: {item['prior_count']} | Avg score: {item['avg_score']}{company_suffix}"
+            )
+    else:
+        lines.append("- No category-level momentum could be established this week.")
+
+    lines.extend(
+        [
+            "",
+            "---",
+            "",
+            "## Constraint heatmap",
+            "",
+        ]
+    )
+    if constraint_heatmap:
+        for item in constraint_heatmap:
+            company_suffix = f" | Companies: {', '.join(item['companies'])}" if item["companies"] else ""
+            lines.append(
+                f"- **{item['function']}** - {item['heat']} heat | Signals: {item['count']} | Avg score: {item['avg_score']}{company_suffix}"
+            )
+    else:
+        lines.append("- No recurring bottlenecks surfaced this week.")
+
+    lines.extend(
+        [
+            "",
+            "---",
+            "",
+            "## What would change our mind",
+            "",
+        ]
+    )
+    for item in disconfirming_evidence:
+        lines.append(f"- {item}")
+
+    lines.extend(
+        [
+            "",
+            "---",
+            "",
+            "## Top signals by score",
+            "",
+        ]
+    )
+    if not top_signals:
+        lines.append("- No core operating signals surfaced this week.")
     for s in top_signals:
         company = f" [{s['company']}]" if s.get("company") else ""
         lines.append(f"- **{s['signal_summary'][:200]}**{company}")
         lines.append(f"  - {s['segment']} | {s['category']} | {s['posture']} | Score: {s['total_score']} | [Link]({s['link']})")
         lines.append(f"  - Recommended move: {s['recommended_move']}")
+        lines.append(f"  - Durability: {durability_label(s, signals)}")
+
     lines.append("")
     lines.append("---")
     lines.append("")
@@ -133,7 +265,6 @@ def build_weekly_brief(
         lines.append("")
 
     if len(ordered) < min_insights and core_signals:
-        # One catch-all from highest-score signals not yet covered
         covered = {s["signal_summary"] for _, cat_s in ordered for s in cat_s}
         remaining = [s for s in core_signals if s["signal_summary"] not in covered][:5]
         if remaining:
@@ -168,14 +299,15 @@ def build_weekly_brief(
             lines.append(f"  - Recent filing mix: {brief['recent_forms']} | Total recent filings: {brief['filing_count']}")
     else:
         lines.append("- No SEC filing items surfaced this week.")
+
     lines.append("")
     lines.append("---")
     lines.append("")
-    lines.append("## Accounts To Work This Week")
+    lines.append("## Where to push now")
     lines.append("")
-    if account_briefs:
-        for brief in account_briefs:
-            lines.append(f"- **{brief['company']}** — {brief['recommended_move']} | {brief['posture']} | Score: {brief['score']} | Signals: {brief['signal_count']}")
+    if active_accounts:
+        for brief in active_accounts:
+            lines.append(f"- **{brief['company']}** - {brief['recommended_move']} | {brief['posture']} | Score: {brief['score']} | Signals: {brief['signal_count']}")
             lines.append(f"  - Why now: {brief['why_now']}")
             lines.append(f"  - Likely buyer: {brief['likely_role']} ({brief['buyer_function']})")
             lines.append(f"  - Trigger to watch: {brief['trigger_moment']}")
@@ -185,18 +317,32 @@ def build_weekly_brief(
                 lines.append(f"  - Anchor signal: [Link]({brief['link']})")
     else:
         lines.append("- No company briefs cleared the account-work threshold this week.")
-    lines.append("")
 
-    # Sell-Ahead Watchlist: 3–7 entries from week's signals where some proactive movement is warranted
+    lines.append("")
+    lines.append("---")
+    lines.append("")
+    lines.append("## Where to wait")
+    lines.append("")
+    if monitor_accounts:
+        for brief in monitor_accounts:
+            lines.append(f"- **{brief['company']}** - {brief['recommended_move']} | {brief['posture']} | Score: {brief['score']} | Signals: {brief['signal_count']}")
+            lines.append(f"  - Why not now: {brief['why_now']}")
+            lines.append(f"  - Watch for: {brief['trigger_moment']}")
+            if brief.get("link"):
+                lines.append(f"  - Anchor signal: [Link]({brief['link']})")
+    else:
+        lines.append("- No lower-priority watchlist accounts surfaced this week.")
+
     watchlist_moves = ("Track target account", "Warm research", "Prepare outreach", "Contact now")
     watchlist_candidates = [s for s in core_signals if s.get("recommended_move") in watchlist_moves]
     if not watchlist_candidates:
         watchlist_candidates = sorted(core_signals, key=lambda x: x["total_score"], reverse=True)[:7]
     watchlist = watchlist_candidates[:7]
 
+    lines.append("")
     lines.append("---")
     lines.append("")
-    lines.append("## Sell-Ahead Watchlist (Next 90–180 Days)")
+    lines.append("## Sell-Ahead Watchlist (Next 90-180 Days)")
     lines.append("")
     for s in watchlist:
         company = (s.get("company") or "").strip() or "TBD"
@@ -219,6 +365,7 @@ def build_weekly_brief(
     if not watchlist:
         lines.append("- None this period; review synthesized insights for manual watchlist.")
         lines.append("")
+
     lines.append("---")
     lines.append("")
     lines.append("*Factual, plain-spoken. Treat as signal inputs, not conclusions. Where evidence is incomplete, watch for follow-on announcements.*")
@@ -229,7 +376,7 @@ def build_weekly_brief(
     lines.append("")
     lines.append("**Steelpoint Operations Opportunity Score (0-100)**")
     lines.append("- **Meaning:** A heuristic indicator of likely near- to mid-term business operations and supply chain strain where Steelpoint Operations services apply. Directional, not predictive.")
-    lines.append("- **Score brackets:** 0–24 Monitor | 25–39 Monitor / Prepare POV | 40–54 Prepare POV | 55–69 Target accounts | 70–84 Proactive outreach | 85–100 Immediate outreach / priority.")
+    lines.append("- **Score brackets:** 0-24 Monitor | 25-39 Monitor / Prepare POV | 40-54 Prepare POV | 55-69 Target accounts | 70-84 Proactive outreach | 85-100 Immediate outreach / priority.")
     lines.append("- **Scoring rules (governance):** Scores must decay if no follow-on signals appear. No single uncorroborated item jumps from <30 to >70. Repeated signals compound. New entrants bias Time-to-strain upward. Technical/geological items cap Operational impact at 10 unless downstream ops/SCM explicit. Keep scores conservative when evidence is incomplete; mark unknowns TBD.")
     lines.append("")
     return "\n".join(lines)
@@ -247,8 +394,12 @@ def write_weekly_report(
 ) -> str:
     os.makedirs(reports_weekly_dir, exist_ok=True)
     content = build_weekly_brief(
-        db_path, end_date, days=days, min_score=min_score,
-        min_insights=min_insights, max_insights=max_insights,
+        db_path,
+        end_date,
+        days=days,
+        min_score=min_score,
+        min_insights=min_insights,
+        max_insights=max_insights,
         secondary_whitelist=secondary_whitelist,
     )
     path = os.path.join(reports_weekly_dir, f"insight_brief_{end_date.isoformat()}.md")

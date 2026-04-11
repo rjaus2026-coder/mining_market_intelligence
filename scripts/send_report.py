@@ -23,11 +23,19 @@ def _report_path(kind: str, report_date: str, root: Path) -> Path:
 
 def _report_is_effectively_empty(kind: str, content: str) -> bool:
     if kind == "daily":
+        has_trailing_context = (
+            "## What remains live from the last 7 days" in content
+            and "No active priorities carried over from the last 7 days." not in content
+        ) or (
+            "## Park for now" in content
+            and "No lower-urgency accounts are being carried this week." not in content
+        )
         return (
             "**New signals today:** 0" in content
             and "No SEC filing items surfaced today." in content
             and "None above threshold today; review top signals manually." in content
             and "No company briefs cleared the account-work threshold today." in content
+            and not has_trailing_context
         )
     return (
         "**Signals in period (US Relevance Gate applied):** 0" in content

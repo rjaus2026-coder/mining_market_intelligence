@@ -8,7 +8,17 @@ from typing import List, Optional
 
 from classify.us_relevance import filter_signals_by_us_gate
 from report.advisory import build_account_briefs, build_sec_company_briefs, enrich_signal, is_sec_signal
-from store import get_connection, get_signals_for_report
+from report.strategic import (
+    build_disconfirming_evidence,
+    build_constraint_heatmap,
+    build_theme_momentum,
+    durability_label,
+    iso_window,
+    previous_iso_window,
+    top_active_accounts,
+    top_monitor_accounts,
+)
+from store import get_connection, get_signals_for_report, get_signals_in_date_range
 
 
 def build_report(
@@ -21,6 +31,12 @@ def build_report(
 ) -> str:
     conn = get_connection(db_path)
     raw_signals = get_signals_for_report(conn, report_date, min_score=0, top_n=max(top_n * 10, 100))
+    lookback_start, lookback_end = iso_window(report_date, 7)
+    prior_start, prior_end = previous_iso_window(lookback_start, 7)
+    raw_lookback = get_signals_in_date_range(conn, lookback_start, lookback_end, min_score=0)
+    raw_prior = get_signals_in_date_range(conn, prior_start, prior_end, min_score=0)
+    conn.close()
+
     signals = sorted(
         [
             enrich_signal(signal)
@@ -29,20 +45,49 @@ def build_report(
         key=lambda item: (item.get("total_score", 0), item.get("time_to_strain", 0)),
         reverse=True,
     )
+    lookback_signals = sorted(
+        [
+            enrich_signal(signal)
+            for signal in filter_signals_by_us_gate(raw_lookback, secondary_whitelist=secondary_whitelist)
+        ],
+        key=lambda item: (item.get("total_score", 0), item.get("time_to_strain", 0)),
+        reverse=True,
+    )
+    prior_signals = sorted(
+        [
+            enrich_signal(signal)
+            for signal in filter_signals_by_us_gate(raw_prior, secondary_whitelist=secondary_whitelist)
+        ],
+        key=lambda item: (item.get("total_score", 0), item.get("time_to_strain", 0)),
+        reverse=True,
+    )
+
     core_signals = [signal for signal in signals if not is_sec_signal(signal)]
     sec_briefs = build_sec_company_briefs(signals, limit=8)
     new_count = len(signals)
     account_briefs = build_account_briefs(signals, limit=8, min_move_rank=1)
+    trailing_account_briefs = build_account_briefs(lookback_signals, limit=10, min_move_rank=0)
+    trailing_active = top_active_accounts(trailing_account_briefs, limit=5)
+    trailing_monitor = top_monitor_accounts(trailing_account_briefs, limit=5)
+    constraint_heatmap = build_constraint_heatmap(lookback_signals, limit=4)
+    theme_momentum = build_theme_momentum(lookback_signals, prior_signals, limit=3)
+    disconfirming_evidence = build_disconfirming_evidence(
+        theme_momentum,
+        constraint_heatmap,
+        trailing_active,
+        trailing_monitor,
+    )
+
     segments_list = []
     if core_signals:
         seg_counts = Counter(s.get("segment", "Operator") for s in core_signals)
         segments_list = [{"segment": k, "cnt": v} for k, v in seg_counts.most_common()]
+
     companies = [
         s
         for s in core_signals
         if (s.get("company") or "").strip() and s.get("total_score", 0) >= min_score_targets
     ]
-    conn.close()
 
     sell_ahead_moves = ("Track target account", "Warm research", "Prepare outreach", "Contact now")
     sell_ahead = [s for s in core_signals if s.get("recommended_move") in sell_ahead_moves]
@@ -54,9 +99,88 @@ def build_report(
         "",
         f"**New signals today:** {new_count}",
         "",
-        "## Top signals by score",
+        "## Strategic readout",
         "",
     ]
+
+    if theme_momentum:
+        top_theme = theme_momentum[0]
+        if new_count:
+            lines.append(
+                f"- Market pulse: {new_count} new U.S.-relevant signals cleared today. The trailing 7-day tape is concentrated in {top_theme['category']} activity."
+            )
+        else:
+            lines.append(
+                f"- Market pulse: No new U.S.-relevant signals cleared today. The trailing 7-day thesis still centers on {top_theme['category']} activity."
+            )
+        lines.append(
+            f"- Momentum check: {top_theme['category']} is {top_theme['status'].lower()} versus the prior 7 days ({top_theme['current_count']} vs {top_theme['prior_count']} signals)."
+        )
+    else:
+        lines.append("- Market pulse: Not enough recent signal volume to infer a reliable theme yet.")
+
+    if constraint_heatmap:
+        hottest = constraint_heatmap[0]
+        lines.append(
+            f"- Bottleneck building: {hottest['function']} is the hottest constraint in the last 7 days ({hottest['count']} signals, avg score {hottest['avg_score']})."
+        )
+    else:
+        lines.append("- Bottleneck building: No recurring execution constraint stands out in the trailing week.")
+
+    if trailing_active:
+        lines.append(
+            "- Commercial implication: Active carryover accounts are "
+            + ", ".join(brief["company"] for brief in trailing_active[:3])
+            + "."
+        )
+    elif trailing_monitor:
+        lines.append(
+            f"- Commercial implication: No accounts are at active-work status, but {len(trailing_monitor)} names still warrant monitoring."
+        )
+    else:
+        lines.append("- Commercial implication: No active or watchlist carryover is being held from the last 7 days.")
+
+    lines.extend(
+        [
+            "",
+            "---",
+            "",
+            "## Constraint heatmap (Trailing 7 days)",
+            "",
+        ]
+    )
+    if constraint_heatmap:
+        for item in constraint_heatmap:
+            company_suffix = f" | Companies: {', '.join(item['companies'])}" if item["companies"] else ""
+            lines.append(
+                f"- **{item['function']}** - {item['heat']} heat | Signals: {item['count']} | Avg score: {item['avg_score']}{company_suffix}"
+            )
+    else:
+        lines.append("- No recurring bottlenecks surfaced in the trailing 7-day lookback.")
+
+    lines.extend(
+        [
+            "",
+            "---",
+            "",
+            "## What would change our mind",
+            "",
+        ]
+    )
+    for item in disconfirming_evidence:
+        lines.append(f"- {item}")
+
+    lines.extend(
+        [
+            "",
+            "---",
+            "",
+            "## Top signals by score",
+            "",
+        ]
+    )
+    if not core_signals:
+        lines.append("- No core operating signals surfaced today; use the trailing 7-day sections below.")
     for s in core_signals[:top_n]:
         company = f" [{s['company']}]" if s.get("company") else ""
         country_suffix = ""
@@ -68,6 +192,7 @@ def build_report(
             f"  - {s['segment']} | {s['category']} | {s['posture']} | Score: {s['total_score']} | [Link]({s['link']})"
         )
         lines.append(f"  - Recommended move: {s['recommended_move']}")
+        lines.append(f"  - Durability: {durability_label(s, lookback_signals)}")
         if s.get("total_score", 0) >= 40:
             lines.append(f"  - Score rationale: {s['score_rationale']}")
         if s.get("source_tier") == "secondary_whitelisted":
@@ -101,6 +226,7 @@ def build_report(
         lines.append(f"  - Language to use: {s['language_to_use']}")
         lines.append(f"  - Language to avoid: {s['language_to_avoid']}")
         lines.append(f"  - Initial scope (2-4 weeks): {s['initial_scope']}")
+
     lines.append("")
     lines.append("---")
     lines.append("")
@@ -118,6 +244,7 @@ def build_report(
             )
     else:
         lines.append("- No SEC filing items surfaced today.")
+
     lines.append("")
     lines.append("---")
     lines.append("")
@@ -135,6 +262,7 @@ def build_report(
             )
     else:
         lines.append("None above threshold today; review top signals manually.")
+
     lines.append("")
     lines.append("---")
     lines.append("")
@@ -154,13 +282,52 @@ def build_report(
                 lines.append(f"  - Anchor signal: [Link]({brief['link']})")
     else:
         lines.append("- No company briefs cleared the account-work threshold today.")
+
+    lines.append("")
+    lines.append("---")
+    lines.append("")
+    lines.append("## What remains live from the last 7 days")
+    lines.append("")
+    if trailing_active:
+        for brief in trailing_active:
+            lines.append(
+                f"- **{brief['company']}** - {brief['recommended_move']} | {brief['posture']} | Score: {brief['score']} | Signals: {brief['signal_count']}"
+            )
+            lines.append(f"  - Why it still matters: {brief['why_now']}")
+            lines.append(f"  - Likely buyer: {brief['likely_role']} ({brief['buyer_function']})")
+            lines.append(f"  - Next trigger: {brief['trigger_moment']}")
+            lines.append(f"  - Best first move: {brief['entry_angle']}")
+    else:
+        lines.append("- No active priorities carried over from the last 7 days.")
+
+    lines.append("")
+    lines.append("---")
+    lines.append("")
+    lines.append("## Park for now")
+    lines.append("")
+    if trailing_monitor:
+        for brief in trailing_monitor:
+            lines.append(
+                f"- **{brief['company']}** - {brief['recommended_move']} | {brief['posture']} | Score: {brief['score']} | Signals: {brief['signal_count']}"
+            )
+            lines.append(f"  - Why not now: {brief['why_now']}")
+            lines.append(f"  - Watch for: {brief['trigger_moment']}")
+            if brief.get("link"):
+                lines.append(f"  - Anchor signal: [Link]({brief['link']})")
+    else:
+        lines.append("- No lower-urgency accounts are being carried this week.")
+
     lines.append("")
     lines.append("---")
     lines.append("")
     lines.append("## By segment")
     lines.append("")
-    for seg in segments_list:
-        lines.append(f"- **{seg['segment']}:** {seg['cnt']}")
+    if segments_list:
+        for seg in segments_list:
+            lines.append(f"- **{seg['segment']}:** {seg['cnt']}")
+    else:
+        lines.append("- No segment concentration surfaced today.")
+
     lines.append("")
     lines.append("---")
     lines.append("")
@@ -187,6 +354,7 @@ def build_report(
         )
     if not seen:
         lines.append("- No companies extracted above threshold; review top signals for manual targeting.")
+
     lines.append("")
     lines.append("---")
     lines.append("")
